@@ -6,7 +6,7 @@
 ;; Copyright (C) 2014, Arthur Miller <arthur.miller@live.com>, all rights reserved.
 ;; Created: 2008-06-08 00:42:07
 ;; Version: 2.1
-;; Last-Updated: 2020-04-26 10:04:48
+;; Last-Updated: 2022-04-12T16:26:51+08:00
 ;; URL: http://www.emacswiki.org/emacs/download/thing-edit.el
 ;; Keywords: thingatpt, edit
 ;; Compatibility: GNU Emacs 23.0.60.1
@@ -102,9 +102,9 @@
 ;; thing-copy-comment                copy comment.
 ;; thing-replace-comment             replace comment with content of kill-ring.
 ;;
-;; thing-cut-paragrap                cut paragraph around cursor.
-;; thing-copy-paragrap               copy paragraph around cursor.
-;; thing-replace-paragrap            replace paragraph around cursor with content of kill-ring.
+;; thing-cut-paragraph                cut paragraph around cursor.
+;; thing-copy-paragraph               copy paragraph around cursor.
+;; thing-replace-paragraph            replace paragraph around cursor with content of kill-ring.
 ;;
 ;; thing-cut-parentheses             cut parentheses around cursor.
 ;; thing-copy-parentheses            copy parentheses around cursor.
@@ -128,6 +128,11 @@
 ;; No more need
 
 ;;; Change log:
+;;
+;; 2022/02/23
+;;      * Make `thing-replace-*' with prefix arg N to replace current thing with Nth most recent kill, like `yank'.
+;;      * Add missing functions `thing-replace-to-line-beginning' and `thing-replace-to-line-end'.
+;;      * Fix typos.
 ;;
 ;; 2020/14/26
 ;;      * Fix `thing-replace-region-or-line' no region here error
@@ -255,20 +260,20 @@ otherwise copy object."
                          (end-of-thing thing)
                          kill-conditional)))
 
-(defun thing-replace-internal (object-beg object-end)
+(defun thing-replace-internal (object-beg object-end arg)
   "A fast replace complexes object.
 Argument OBJECT-BEG the begin position that object.
 Argument OBJECT-END the end position of object."
-  (interactive)
+  (interactive "*p")
   (goto-char object-beg)
   (delete-char (- object-end object-beg))
-  (yank))
+  (yank arg))
 
-(defun thing-replace (thing)
+(defun thing-replace (thing arg)
   "This function is a simple interface for `thing-replace-internal'"
-  (save-excursion
-    (thing-replace-internal (beginning-of-thing thing)
-                            (end-of-thing thing))))
+  (thing-replace-internal (beginning-of-thing thing)
+                          (end-of-thing thing)
+                          arg))
 
 ;;;###autoload
 (defun thing-cut-sexp ()
@@ -284,10 +289,10 @@ With the universal argument, the text will also be killed."
   (thing-edit 'sexp kill-conditional))
 
 ;;;###autoload
-(defun thing-replace-sexp ()
+(defun thing-replace-sexp (arg)
   "Replace sexp at current point with the content of kill-ring."
-  (interactive)
-  (thing-replace 'sexp))
+  (interactive "*P")
+  (thing-replace 'sexp arg))
 
 ;;;###autoload
 (defun thing-cut-email ()
@@ -307,12 +312,12 @@ With the universal argument, the text will also be killed"
     (thing-edit 'email kill-conditional)))
 
 ;;;###autoload
-(defun thing-replace-email ()
+(defun thing-replace-email (arg)
   "Replace email at current point with the content kill ring."
-  (interactive)
+  (interactive "*P")
   (save-excursion
     (backward-sexp)     ;make sure `thing-at-point-email-regexp' works
-    (thing-replace 'email)))
+    (thing-replace 'email arg)))
 
 ;;;###autoload
 (defun thing-cut-filename ()
@@ -328,10 +333,10 @@ With the universal argument, the text will also be killed"
   (thing-edit 'filename kill-conditional))
 
 ;;;###autoload
-(defun thing-replace-filename ()
+(defun thing-replace-filename (arg)
   "Replace filename at current point with kill ring."
-  (interactive)
-  (thing-replace 'filename))
+  (interactive "*P")
+  (thing-replace 'filename arg))
 
 ;;;###autoload
 (defun thing-cut-url ()
@@ -347,10 +352,10 @@ With the universal argument, the text will also be killed"
   (thing-edit 'url kill-conditional))
 
 ;;;###autoload
-(defun thing-replace-url ()
+(defun thing-replace-url (arg)
   "Replace url at current point with kill ring."
-  (interactive)
-  (thing-replace 'url))
+  (interactive "*P")
+  (thing-replace 'url arg))
 
 ;;;###autoload
 (defun thing-cut-word ()
@@ -366,10 +371,10 @@ With the universal argument, the text will also be killed"
   (thing-edit 'word kill-conditional))
 
 ;;;###autoload
-(defun thing-replace-word ()
+(defun thing-replace-word (arg)
   "Replace words at point with kill ring."
-  (interactive)
-  (thing-replace 'word))
+  (interactive "*P")
+  (thing-replace 'word arg))
 
 ;;;###autoload
 (defun thing-cut-symbol ()
@@ -385,10 +390,10 @@ With the universal argument, the text will also be killed"
   (thing-edit 'symbol kill-conditional))
 
 ;;;###autoload
-(defun thing-replace-symbol ()
+(defun thing-replace-symbol (arg)
   "Replace symbol around point with kill ring."
-  (interactive)
-  (thing-replace 'symbol))
+  (interactive "*P")
+  (thing-replace 'symbol arg))
 
 ;;;###autoload
 (defun thing-cut-line ()
@@ -404,10 +409,10 @@ With the universal argument, the text will also be killed"
   (thing-edit 'line kill-conditional))
 
 ;;;###autoload
-(defun thing-replace-line ()
+(defun thing-replace-line (arg)
   "Replace current line with kill ring"
-  (interactive)
-  (thing-replace 'line))
+  (interactive "*P")
+  (thing-replace 'line arg))
 
 ;;;###autoload
 (defun thing-copy-paragraph (kill-conditional)
@@ -417,10 +422,10 @@ With the universal argument, the text will also be killed"
   (thing-edit 'paragraph kill-conditional))
 
 ;;;###autoload
-(defun thing-replace-paragraph ()
+(defun thing-replace-paragraph (arg)
   "Replace current paragraph around the point with the content of kill ring."
-  (interactive)
-  (thing-replace 'paragraph))
+  (interactive "*P")
+  (thing-replace 'paragraph arg))
 
 ;;;###autoload
 (defun thing-cut-paragraph (&optional kill-conditional)
@@ -442,10 +447,10 @@ With the universal argument, the text will also be killed"
   (thing-edit 'defun kill-conditional))
 
 ;;;###autoload
-(defun thing-replace-defun ()
+(defun thing-replace-defun (arg)
   "Replace function around point with the content of kill ring."
-  (interactive)
-  (thing-replace 'defun))
+  (interactive "*P")
+  (thing-replace 'defun arg))
 
 ;;;###autoload
 (defun thing-cut-list ()
@@ -461,10 +466,10 @@ With the universal argument, the text will also be killed"
   (thing-edit 'list kill-conditional))
 
 ;;;###autoload
-(defun thing-replace-list ()
+(defun thing-replace-list (arg)
   "Replace list around point with the content of kill ring."
-  (interactive)
-  (thing-replace 'list))
+  (interactive "*P")
+  (thing-replace 'list arg))
 
 ;;;###autoload
 (defun thing-cut-sentence ()
@@ -480,10 +485,10 @@ With the universal argument, the text will also be killed"
   (thing-edit 'sentence kill-conditional))
 
 ;;;###autoload
-(defun thing-replace-sentence ()
+(defun thing-replace-sentence (arg)
   "Replace sentence around point with the content of currnt line."
-  (interactive)
-  (thing-replace 'sentence))
+  (interactive "*P")
+  (thing-replace 'sentence arg))
 
 ;;;###autoload
 (defun thing-cut-whitespace ()
@@ -499,10 +504,10 @@ With the universal argument, the text will also be killed"
   (thing-edit 'whitespace kill-conditional))
 
 ;;;###autoload
-(defun thing-replace-whitespace ()
+(defun thing-replace-whitespace (arg)
   "Replace whitespace around point with the content of currnt line."
-  (interactive)
-  (thing-replace 'whitespace))
+  (interactive "*P")
+  (thing-replace 'whitespace arg))
 
 ;;;###autoload
 (defun thing-cut-page ()
@@ -518,10 +523,10 @@ With the universal argument, the text will also be killed"
   (thing-edit 'page kill-conditional))
 
 ;;;###autoload
-(defun thing-replace-page ()
+(defun thing-replace-page (arg)
   "Replace page around point with the content of currnt line."
-  (interactive)
-  (thing-replace 'page))
+  (interactive "*P")
+  (thing-replace 'page arg))
 
 ;; Below function is not base on thingatpt, but it's effect like above function.
 ;; So i add to this package.
@@ -543,6 +548,13 @@ otherwise copy object."
                          kill-conditional)))
 
 ;;;###autoload
+(defun thing-replace-to-line-end (arg)
+  "Replace content from current point to line end with content of kill-ring."
+  (interactive "*P")
+  (thing-replace-internal (point)
+                          (line-end-position)
+                          arg))
+;;;###autoload
 (defun thing-cut-to-line-beginning ()
   "Cut content from current point to line beginning."
   (interactive)
@@ -550,7 +562,7 @@ otherwise copy object."
 
 ;;;###autoload
 (defun thing-copy-to-line-beginning (&optional kill-conditional)
-  "Copy content from current point tot line beginning.
+  "Copy content from current point to line beginning.
 If `KILL-CONDITIONAL' is non-nil, kill object,
 otherwise copy object."
   (interactive)
@@ -558,6 +570,14 @@ otherwise copy object."
     (thing-edit-internal (line-beginning-position)
                          (point)
                          kill-conditional)))
+
+;;;###autoload
+(defun thing-replace-to-line-beginning (arg)
+  "Replace content from current point to line beginning with content of kill-ring."
+  (interactive "*P")
+  (thing-replace-internal (line-beginning-position)
+                          (point)
+                          arg))
 
 ;;;###autoload
 (defun thing-cut-comment ()
@@ -626,20 +646,23 @@ With the universal argument, the text will also be killed"
        kill-conditional))))
 
 ;;;###autoload
-(defun thing-replace-number ()
+(defun thing-replace-number (arg)
   "Replace number at point with kill ring."
-  (interactive)
+  (interactive "*P")
   (save-excursion
     (when (thing-at-point-looking-at "-?[0-9]+\\.?[0-9]*" 500)
       (thing-replace-internal
        (match-beginning 0)
-       (match-end 0)))))
+       (match-end 0)
+       arg))))
 
+;;;###autoload
 (defun thing-cut-parentheses ()
   "Cut content in match parentheses."
   (interactive)
   (thing-copy-parentheses t))
 
+;;;###autoload
 (defun thing-copy-parentheses (kill-conditional)
   "Copy content in match parentheses.
 If `KILL-CONDITIONAL' is non-nil, kill object,
@@ -662,14 +685,16 @@ otherwise copy object."
          (point))
        kill-conditional))))
 
-(defun thing-replace-parentheses ()
+;;;###autoload
+(defun thing-replace-parentheses (arg)
   "Replace content in match parentheses with the content of currnt line."
-  (interactive)
+  (interactive "*P")
   (save-excursion
     (if (thing-edit-in-string-p)
         (thing-replace-internal
          (1+ (car (thing-edit-string-start+end-points)))
-         (cdr (thing-edit-string-start+end-points)))
+         (cdr (thing-edit-string-start+end-points))
+         arg)
       (thing-replace-internal
        (progn
          (backward-up-list)
@@ -678,7 +703,8 @@ otherwise copy object."
        (progn
          (up-list)
          (forward-char -1)
-         (point))))))
+         (point))
+       arg))))
 
 (defun thing-edit-in-string-p (&optional state)
   (or (nth 3 (or state (thing-edit-current-parse-state)))
@@ -726,16 +752,16 @@ otherwise copy object."
   (interactive)
   (thing-copy-region-or-line t))
 
-(defun thing-replace-region-or-line ()
+(defun thing-replace-region-or-line (arg)
   "Replace the current region or line with the content."
-  (interactive)
+  (interactive "*P")
   (save-excursion
     (let* ((active (region-active-p))
            (pos (or (and active (region-beginning))
                     (line-beginning-position)))
            (pos-end (or (and active (region-end))
                         (line-end-position))))
-      (thing-replace-internal pos pos-end))))
+      (thing-replace-internal pos pos-end arg))))
 
 (defun thing-copy-whole-buffer (&optional kill-conditional)
   "Copy content of the current buffer.
@@ -750,10 +776,10 @@ otherwise copy object."
   (interactive)
   (thing-copy-whole-buffer t))
 
-(defun thing-replace-whole-buffer ()
+(defun thing-replace-whole-buffer (arg)
   "Replace the current buffer with the content."
-  (interactive)
-  (thing-replace 'buffer))
+  (interactive "*P")
+  (thing-replace 'buffer arg))
 
 (provide 'thing-edit)
 
